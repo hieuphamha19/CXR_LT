@@ -17,16 +17,14 @@ This project uses CLIP-based models to detect rare chest X-ray findings that wer
 
 ## Features
 
-- **Zero-Shot Detection**: No training required, uses pre-trained CLIP models
-- **Multiple CLIP Models Supported**:
-  - **WhyXrayCLIP** (Recommended): CXR-specialized CLIP from UPenn
-  - **Microsoft CXR-CLIP (BioViL)**: Medical imaging specialized model
-  - **OpenCLIP**: General-purpose CLIP models (ViT-B-16, ViT-L-14, etc.)
+- **Zero-Shot Detection**: No training required, uses pre-trained WhyXrayCLIP model
+- **WhyXrayCLIP**: CXR-specialized CLIP from UPenn - best performance on chest X-rays
 - **Enhanced Prompt Engineering**:
   - Multi-template prompts (13 prompts per class)
   - Clinical, radiological, anatomical, and medical terminology perspectives
   - Prompt ensemble for robust predictions
 - **Optimized for Medical Imaging**: Specialized preprocessing for chest X-rays
+- **Simple & Clean**: Single model, no complex configurations
 
 ## File Structure
 
@@ -51,17 +49,11 @@ conda activate cxr_ood
 
 # Install dependencies
 pip install -r requirements.txt
-
-# For WhyXrayCLIP (Recommended - Best Performance)
-pip install open-clip-torch
-
-# For Microsoft CXR-CLIP (Optional - Alternative)
-pip install hi-ml-multimodal
 ```
 
 ## Usage
 
-### Basic Usage (WhyXrayCLIP - Recommended)
+### Basic Usage
 
 ```bash
 python zero_shot_ood_detection.py \
@@ -70,80 +62,45 @@ python zero_shot_ood_detection.py \
   --output submission.csv
 ```
 
-### Using Microsoft CXR-CLIP (BioViL)
+### With Custom Batch Size
 
 ```bash
 python zero_shot_ood_detection.py \
-  --use_cxr_clip \
   --test_csv /path/to/test.csv \
   --image_dir /path/to/images \
-  --output submission_biovil.csv
+  --batch_size 64 \
+  --output submission.csv
 ```
 
-### Using Different OpenCLIP Models
+### Using Default Paths from Config
+
+If you have `config.py` set up with correct paths:
 
 ```bash
-# ViT-L-14 with LAION-2B
-python zero_shot_ood_detection.py \
-  --clip_model ViT-L-14 \
-  --clip_pretrained laion2b_s34b_b88k \
-  --test_csv /path/to/test.csv \
-  --image_dir /path/to/images \
-  --output submission_vitl14.csv
-
-# ViT-B-16 with OpenAI weights
-python zero_shot_ood_detection.py \
-  --clip_model ViT-B-16 \
-  --clip_pretrained openai \
-  --test_csv /path/to/test.csv \
-  --image_dir /path/to/images \
-  --output submission_vitb16.csv
+python zero_shot_ood_detection.py
 ```
 
 ### Command-Line Arguments
 
 ```
---clip_model              CLIP model architecture (default: ViT-L-14)
-                         Options: ViT-B-16, ViT-L-14, ViT-H-14, etc.
-                         Or use: hf-hub:yyupenn/whyxrayclip for CXR-specialized
-
---clip_pretrained        Pretrained weights (default: hf-hub:yyupenn/whyxrayclip)
-                         Options: openai, laion2b_s34b_b88k, laion400m_e32, etc.
-
---use_cxr_clip          Use Microsoft CXR-CLIP (BioViL) instead of OpenCLIP
-                         Specialized for chest X-rays
-
+--test_csv              Path to test CSV file (default: from config)
+--image_dir             Path to image directory (default: from config)
 --batch_size            Batch size for inference (default: from config)
-
---output                Output CSV file path (default: auto-generated)
-
---test_csv              Path to test CSV file
-
---image_dir             Path to image directory
+--output                Output CSV file path (default: submission_task2_whyxrayclip.csv)
 ```
 
-## Model Comparison
+## Why WhyXrayCLIP?
 
-### WhyXrayCLIP (Recommended)
+### WhyXrayCLIP
 - **Source**: University of Pennsylvania
-- **Specialty**: Trained specifically on chest X-rays
-- **Architecture**: ViT-L-14
-- **Advantages**: Best performance on CXR tasks, understands medical terminology
-- **Installation**: `pip install open-clip-torch`
-
-### Microsoft CXR-CLIP (BioViL)
-- **Source**: Microsoft Research
-- **Specialty**: Medical imaging (CXR + radiology reports)
-- **Architecture**: ResNet50 + CXR-BERT
-- **Advantages**: Strong medical domain knowledge, robust to variations
-- **Installation**: `pip install hi-ml-multimodal`
-
-### OpenCLIP (General)
-- **Source**: LAION / OpenAI
-- **Specialty**: General vision-language understanding
-- **Architecture**: Various (ViT-B-16, ViT-L-14, ViT-H-14, etc.)
-- **Advantages**: Large-scale pre-training, good generalization
-- **Installation**: `pip install open-clip-torch`
+- **Specialty**: Trained specifically on chest X-rays with radiology reports
+- **Architecture**: ViT-L-14 (Vision Transformer Large)
+- **Advantages**: 
+  - Best performance on CXR tasks
+  - Understands medical terminology
+  - Pre-trained on large-scale CXR dataset
+  - Robust to various imaging conditions
+- **Paper**: "Towards Explainable Zero-Shot Chest X-Ray Classification" (2023)
 
 ## Prompt Engineering Strategy
 
@@ -206,27 +163,19 @@ Each value represents the probability [0, 1] that the corresponding finding is p
 
 ## Performance Tips
 
-1. **Use WhyXrayCLIP**: Consistently gives best results on chest X-ray tasks
-2. **Batch Size**: Larger batch sizes (32-64) improve throughput
-3. **GPU Memory**: 
-   - ViT-B-16: ~4GB VRAM
-   - ViT-L-14: ~8GB VRAM
-   - CXR-CLIP (BioViL): ~6GB VRAM
-4. **Preprocessing**: Images are automatically normalized to [0, 1] and resized
+1. **Batch Size**: Larger batch sizes (32-64) improve throughput
+2. **GPU Memory**: WhyXrayCLIP (ViT-L-14) requires ~8GB VRAM
+3. **Preprocessing**: Images are automatically normalized to [0, 1] and resized to 224×224
+4. **Prompt Ensemble**: Using 13 prompts per class provides robust predictions
 
 ## Technical Details
 
 ### Image Preprocessing
 
-**For OpenCLIP (WhyXrayCLIP, ViT models)**:
+**WhyXrayCLIP**:
 - Resize to 224×224
 - Convert to RGB (3 channels)
 - Normalize with CLIP stats: mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711]
-
-**For Microsoft CXR-CLIP (BioViL)**:
-- Resize to 480×480
-- Convert to RGB (3 channels)
-- Normalize with ImageNet stats: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
 
 ### Similarity to Probability Conversion
 
@@ -243,15 +192,15 @@ probability = sigmoid(class_score * temperature)
 
 Default temperature = 5.0 (tuned for optimal calibration)
 
-## Advanced Features (Future Work)
+## Code Design
 
-The codebase is designed to support advanced features:
-- **Negative Prompts**: Use contrastive prompts to improve discrimination
-- **Multi-Scale Inference**: Test at multiple resolutions
-- **Attention-Based Prompt Weighting**: Learn optimal prompt combinations
-- **Learnable Temperature**: Per-class temperature scaling
+This implementation is **clean and focused**:
+- Single model (WhyXrayCLIP) - no model selection complexity
+- Simple API - minimal command-line arguments
+- Well-documented prompts - easy to understand and modify
+- Efficient inference - optimized for production use
 
-These features are implemented in `task2_best_v3.py` and can be integrated if needed.
+For advanced features (negative prompts, multi-scale, attention weighting), see the research codebase in the parent directory.
 
 ## Troubleshooting
 
@@ -262,24 +211,19 @@ These features are implemented in `task2_best_v3.py` and can be integrated if ne
 pip install open-clip-torch
 ```
 
-**CXR-CLIP not found**:
-```bash
-pip install hi-ml-multimodal
-```
-
 ### Memory Issues
 
 If you encounter OOM errors:
 1. Reduce batch size: `--batch_size 16`
-2. Use smaller model: `--clip_model ViT-B-16`
-3. Enable CPU offloading (slower but works)
+2. Close other applications to free GPU memory
+3. Use a GPU with at least 8GB VRAM
 
 ### Poor Performance
 
-1. **Try WhyXrayCLIP**: Best for chest X-rays
-2. **Check image quality**: Ensure images are readable
-3. **Verify preprocessing**: Images should be grayscale CXRs
-4. **Review prompts**: Customize prompts for your specific use case
+1. **Check image quality**: Ensure images are readable chest X-rays
+2. **Verify preprocessing**: Images should be properly loaded
+3. **Review prompts**: The 13 prompts per class are optimized but can be customized
+4. **Check batch size**: Larger batches may improve stability
 
 
 ## License

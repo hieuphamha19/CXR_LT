@@ -7,16 +7,8 @@ pandas>=2.0.0
 # Image processing
 opencv-python>=4.8.0
 
-# Vision-Language Models
-open-clip-torch>=2.20.0  # For WhyXrayCLIP and OpenCLIP models
-
-# Optional: Microsoft CXR-CLIP (BioViL)
-# Uncomment if using --use_cxr_clip flag
-# hi-ml-multimodal>=0.3.0
+# Vision-Language Model - WhyXrayCLIP
+open-clip-torch>=2.20.0
 
 # Progress bars
 tqdm>=4.65.0
-
-# Note: Choose ONE of the following based on your preferred CLIP model:
-# 1. open-clip-torch (Recommended) - For WhyXrayCLIP and general OpenCLIP models
-# 2. hi-ml-multimodal (Optional) - For Microsoft CXR-CLIP (BioViL)

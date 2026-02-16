@@ -38,29 +38,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import local modules
-from tta import TTAPredictor
 from utils import set_seed
 
-# Try to import OpenCLIP
+# Import OpenCLIP (required for WhyXrayCLIP)
 try:
     import open_clip
-    CLIP_AVAILABLE = True
     logger.info("✓ OpenCLIP available")
 except ImportError:
-    CLIP_AVAILABLE = False
-    logger.warning("⚠ OpenCLIP not available. Install with: pip install open-clip-torch")
-
-# Try to import CXR-CLIP (Microsoft BioViL)
-try:
-    from health_multimodal.text import get_cxr_bert_inference
-    from health_multimodal.image import get_image_inference
-    from health_multimodal.image.model.pretrained import get_biovil_resnet, get_biovil_t_image_encoder
-    from health_multimodal.text.model.pretrained import get_cxr_bert
-    CXR_CLIP_AVAILABLE = True
-    logger.info("✓ CXR-CLIP (BioViL) available")
-except ImportError:
-    CXR_CLIP_AVAILABLE = False
-    logger.warning("⚠ CXR-CLIP not available. Install with: pip install hi-ml-multimodal")
+    logger.error("ERROR: OpenCLIP not available. Install with: pip install open-clip-torch")
+    raise
 
 # Config
 DEVICE = cfg.DEVICE
@@ -178,66 +164,28 @@ class CXRDataset(Dataset):
 # ============================================================================
 
 class CLIPZeroShotOOD:
-    """Zero-shot OOD detection using OpenCLIP or CXR-CLIP."""
+    """Zero-shot OOD detection using WhyXrayCLIP (CXR-specialized CLIP)."""
     
-    def __init__(self, model_name="ViT-B-16", pretrained="laion2b_s34b_b88k", device='cuda', use_cxr_clip=False):
+    def __init__(self, device='cuda'):
         """
-        Initialize CLIP model for zero-shot classification.
+        Initialize WhyXrayCLIP model for zero-shot classification.
         
         Args:
-            model_name: CLIP model architecture (e.g., 'ViT-B-16', 'ViT-L-14')
-            pretrained: Pretrained weights (e.g., 'laion2b_s34b_b88k', 'openai')
             device: Device to run on
-            use_cxr_clip: If True, use Microsoft's CXR-CLIP (BioViL) instead of OpenCLIP
         """
         self.device = device
-        self.use_cxr_clip = use_cxr_clip
         
-        if use_cxr_clip:
-            # Use Microsoft's CXR-CLIP (BioViL)
-            if not CXR_CLIP_AVAILABLE:
-                raise ImportError("CXR-CLIP not available. Install with: pip install hi-ml-multimodal")
-            
-            logger.info("Loading CXR-CLIP (Microsoft BioViL) - specialized for chest X-rays")
-            
-            # Load image encoder (ResNet50 trained on CXR)
-            self.image_model = get_biovil_resnet()
-            self.image_model = self.image_model.to(device)
-            self.image_model.eval()
-            
-            # Load text encoder (CXR-BERT)
-            self.text_model = get_cxr_bert()
-            self.text_model = self.text_model.to(device)
-            self.text_model.eval()
-            
-            # Get text tokenizer
-            self.tokenizer = get_cxr_bert_inference().tokenizer
-            
-            logger.info("✓ CXR-CLIP loaded successfully")
-        else:
-            # Use OpenCLIP
-            if not CLIP_AVAILABLE:
-                raise ImportError("OpenCLIP not available. Install with: pip install open-clip-torch")
-            
-            # Handle Hugging Face Hub models (e.g., hf-hub:yyupenn/whyxrayclip)
-            if model_name.startswith("hf-hub:"):
-                logger.info(f"Loading CLIP model from Hugging Face Hub: {model_name}")
-                self.model, _, self.preprocess = open_clip.create_model_and_transforms(model_name)
-                # Extract base architecture for tokenizer (e.g., ViT-L-14 from whyxrayclip)
-                tokenizer_name = "ViT-L-14" if "whyxrayclip" in model_name.lower() else "ViT-B-16"
-                self.tokenizer = open_clip.get_tokenizer(tokenizer_name)
-                logger.info(f"✓ Loaded {model_name} (CXR-specialized CLIP)")
-            else:
-                logger.info(f"Loading CLIP model: {model_name} with {pretrained}")
-                self.model, _, self.preprocess = open_clip.create_model_and_transforms(
-                    model_name, 
-                    pretrained=pretrained
-                )
-                self.tokenizer = open_clip.get_tokenizer(model_name)
-                logger.info(f"✓ OpenCLIP model loaded")
-            
-            self.model = self.model.to(device)
-            self.model.eval()
+        # Load WhyXrayCLIP from Hugging Face Hub
+        model_name = "hf-hub:yyupenn/whyxrayclip"
+        logger.info(f"Loading WhyXrayCLIP - CXR-specialized CLIP model")
+        
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(model_name)
+        self.tokenizer = open_clip.get_tokenizer("ViT-L-14")
+        
+        self.model = self.model.to(device)
+        self.model.eval()
+        
+        logger.info("✓ WhyXrayCLIP loaded successfully")
         
         # Define text prompts for OOD classes
         self.ood_classes = OOD_CLASSES
@@ -390,26 +338,11 @@ class CLIPZeroShotOOD:
         
         with torch.no_grad():
             for class_name, prompts in self.text_prompts.items():
-                if self.use_cxr_clip:
-                    # CXR-CLIP text encoding
-                    text_tokens = self.tokenizer(
-                        prompts,
-                        padding=True,
-                        truncation=True,
-                        max_length=512,
-                        return_tensors="pt"
-                    ).to(self.device)
-                    
-                    # Get text embeddings
-                    text_features = self.text_model(**text_tokens).projected_global_embedding
-                    # Normalize
-                    text_features = F.normalize(text_features, dim=-1)
-                else:
-                    # OpenCLIP text encoding
-                    text_tokens = self.tokenizer(prompts).to(self.device)
-                    text_features = self.model.encode_text(text_tokens)
-                    # Normalize
-                    text_features = F.normalize(text_features, dim=-1)
+                # WhyXrayCLIP text encoding
+                text_tokens = self.tokenizer(prompts).to(self.device)
+                text_features = self.model.encode_text(text_tokens)
+                # Normalize
+                text_features = F.normalize(text_features, dim=-1)
                 
                 all_features[class_name] = text_features
         
@@ -417,23 +350,14 @@ class CLIPZeroShotOOD:
     
     def preprocess_image(self, image_tensor):
         """
-        Preprocess image for CLIP.
+        Preprocess image for WhyXrayCLIP.
         Input: (B, 3, H, W) RGB tensor [0, 1]
         Output: (B, 3, H, W) RGB tensor normalized for CLIP
         """
-        # Already RGB, no need to convert
-        
-        if self.use_cxr_clip:
-            # CXR-CLIP (BioViL) expects 480x480 images
-            # with ImageNet normalization
-            image_tensor = F.interpolate(image_tensor, size=(480, 480), mode='bilinear', align_corners=False)
-            mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(image_tensor.device)
-            std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(image_tensor.device)
-        else:
-            # OpenCLIP expects 224x224 with CLIP normalization
-            image_tensor = F.interpolate(image_tensor, size=(224, 224), mode='bilinear', align_corners=False)
-            mean = torch.tensor([0.48145466, 0.4578275, 0.40821073]).view(1, 3, 1, 1).to(image_tensor.device)
-            std = torch.tensor([0.26862954, 0.26130258, 0.27577711]).view(1, 3, 1, 1).to(image_tensor.device)
+        # WhyXrayCLIP expects 224x224 with CLIP normalization
+        image_tensor = F.interpolate(image_tensor, size=(224, 224), mode='bilinear', align_corners=False)
+        mean = torch.tensor([0.48145466, 0.4578275, 0.40821073]).view(1, 3, 1, 1).to(image_tensor.device)
+        std = torch.tensor([0.26862954, 0.26130258, 0.27577711]).view(1, 3, 1, 1).to(image_tensor.device)
         
         image_tensor = (image_tensor - mean) / std
         
@@ -450,18 +374,12 @@ class CLIPZeroShotOOD:
             predictions: Tensor of shape (B, num_ood_classes) - probabilities [0, 1]
         """
         with torch.no_grad():
-            # Preprocess images for CLIP
+            # Preprocess images for WhyXrayCLIP
             images = self.preprocess_image(images.to(self.device))
             
-            # Encode images
-            if self.use_cxr_clip:
-                # CXR-CLIP image encoding
-                image_features = self.image_model(images).projected_global_embedding
-                image_features = F.normalize(image_features, dim=-1)
-            else:
-                # OpenCLIP image encoding
-                image_features = self.model.encode_image(images)
-                image_features = F.normalize(image_features, dim=-1)
+            # Encode images with WhyXrayCLIP
+            image_features = self.model.encode_image(images)
+            image_features = F.normalize(image_features, dim=-1)
             
             # Compute similarities with text prompts
             predictions = []
@@ -561,39 +479,40 @@ def create_submission(predictions, image_ids, output_path):
 # ============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description='Task 2: Zero-Shot OOD Detection (6 classes only)')
-    parser.add_argument('--clip_model', type=str, default='ViT-L-14',
-                        help='CLIP model architecture (e.g., ViT-B-16, ViT-L-14, or hf-hub:yyupenn/whyxrayclip for CXR-specialized model)')
-    parser.add_argument('--clip_pretrained', type=str, default='hf-hub:yyupenn/whyxrayclip',
-                        help='CLIP pretrained weights (ignored if using hf-hub model)')
-    parser.add_argument('--use_cxr_clip', action='store_true',
-                        help='Use Microsoft CXR-CLIP (BioViL) instead of OpenCLIP - specialized for chest X-rays')
+    parser = argparse.ArgumentParser(description='Task 2: Zero-Shot OOD Detection using WhyXrayCLIP')
     parser.add_argument('--batch_size', type=int, default=None,
                         help='Batch size (default: from config)')
     parser.add_argument('--output', type=str, default=None,
                         help='Output submission file path')
+    parser.add_argument('--test_csv', type=str, default=None,
+                        help='Path to test CSV file (default: from config)')
+    parser.add_argument('--image_dir', type=str, default=None,
+                        help='Path to image directory (default: from config)')
     
     args = parser.parse_args()
     
     batch_size = args.batch_size if args.batch_size is not None else BATCH_SIZE
+    test_csv = args.test_csv if args.test_csv is not None else TEST_CSV
+    image_dir = args.image_dir if args.image_dir is not None else IMAGE_DIR
     
     print("\n" + "="*60)
     print("TASK 2: ZERO-SHOT OOD DETECTION (6 CLASSES)")
     print("="*60)
-    if args.use_cxr_clip:
-        print(f"Model: CXR-CLIP (Microsoft BioViL) - Medical X-ray specialized")
-    elif args.clip_model.startswith("hf-hub:"):
-        print(f"Model: {args.clip_model} - CXR-specialized CLIP from Hugging Face")
-    else:
-        print(f"Model: OpenCLIP - {args.clip_model} ({args.clip_pretrained})")
+    print("Model: WhyXrayCLIP (CXR-specialized CLIP from UPenn)")
     print(f"Batch Size: {batch_size}")
+    print(f"Test CSV: {test_csv}")
+    print(f"Image Dir: {image_dir}")
     
     # Load test data
     print("\n" + "="*60)
     print("LOADING TEST DATA")
     print("="*60)
     
-    test_df = pd.read_csv(TEST_CSV)
+    if not os.path.exists(test_csv):
+        logger.error(f"ERROR: Test CSV not found at {test_csv}")
+        return
+    
+    test_df = pd.read_csv(test_csv)
     original_len = len(test_df)
     logger.info(f"Original test samples: {original_len}")
     
@@ -607,7 +526,7 @@ def main():
         logger.info(f"Final test samples: {len(test_df)}")
     
     # Create dataset
-    test_dataset = CXRDataset(test_df, IMAGE_DIR, image_size=IMAGE_SIZE)
+    test_dataset = CXRDataset(test_df, image_dir, image_size=IMAGE_SIZE)
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -618,28 +537,12 @@ def main():
         prefetch_factor=16 if NUM_WORKERS > 0 else None
     )
     
-    # Load CLIP model
+    # Load WhyXrayCLIP model
     print("\n" + "="*60)
-    print("LOADING CLIP MODEL FOR OOD DETECTION")
+    print("LOADING WHYXRAYCLIP MODEL")
     print("="*60)
     
-    if args.use_cxr_clip:
-        if not CXR_CLIP_AVAILABLE:
-            logger.error("ERROR: CXR-CLIP (BioViL) not available!")
-            logger.error("Install with: pip install hi-ml-multimodal")
-            return
-    else:
-        if not CLIP_AVAILABLE:
-            logger.error("ERROR: OpenCLIP not available!")
-            logger.error("Install with: pip install open-clip-torch")
-            return
-    
-    clip_model = CLIPZeroShotOOD(
-        model_name=args.clip_model,
-        pretrained=args.clip_pretrained,
-        device=DEVICE,
-        use_cxr_clip=args.use_cxr_clip
-    )
+    clip_model = CLIPZeroShotOOD(device=DEVICE)
     
     # Create OOD detector
     print("\n" + "="*60)
@@ -652,7 +555,7 @@ def main():
     )
     
     logger.info("✓ OOD detector ready")
-    logger.info(f"  - CLIP Model: 6 OOD classes only")
+    logger.info(f"  - WhyXrayCLIP: 6 OOD classes")
     
     # Run inference
     print("\n" + "="*60)
@@ -670,8 +573,7 @@ def main():
     print("="*60)
     
     if args.output is None:
-        clip_str = "_cxrclip" if args.use_cxr_clip else ""
-        output_name = f"submission_task2_ood{clip_str}.csv"
+        output_name = "submission_task2_whyxrayclip.csv"
         output_path = os.path.join(OUTPUT_DIR, output_name)
     else:
         output_path = args.output

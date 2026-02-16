@@ -1,4 +1,4 @@
-# Winner Solution at CXR-LT 2026 (ISBI)
+# CXR Long-Tailed Recognition Challenge 2026
 
 This repository contains solutions for the CXR Long-Tailed Recognition Challenge 2026, addressing two critical problems in medical image analysis:
 
@@ -66,7 +66,7 @@ python ensemble_inference.py \
 
 ### Task 2: Zero-Shot OOD Detection
 
-Detect 6 rare findings not seen during training using vision-language models.
+Detect 6 rare findings not seen during training using WhyXrayCLIP.
 
 ```bash
 cd Task2_Zero_shot
@@ -74,25 +74,22 @@ cd Task2_Zero_shot
 # Install dependencies
 pip install -r requirements.txt
 
-# Run inference with WhyXrayCLIP (recommended)
+# Run inference with WhyXrayCLIP
 python zero_shot_ood_detection.py \
   --test_csv test.csv \
   --image_dir /path/to/images \
   --output submission.csv
 
-# Or use Microsoft CXR-CLIP
-python zero_shot_ood_detection.py \
-  --use_cxr_clip \
-  --test_csv test.csv \
-  --image_dir /path/to/images \
-  --output submission.csv
+# Or use default paths from config
+python zero_shot_ood_detection.py
 ```
 
 **Key Features**:
 - Zero-shot learning (no training required)
-- Multiple CLIP models (WhyXrayCLIP, CXR-CLIP, OpenCLIP)
+- WhyXrayCLIP (CXR-specialized CLIP from UPenn)
 - Enhanced prompt engineering (13 prompts per class)
 - Medical terminology and radiological findings
+- Simple & clean API
 
 ## Statistics
 
@@ -104,11 +101,11 @@ python zero_shot_ood_detection.py \
 
 ### Task 2: Zero-Shot OOD Detection
 - **Files**: 4 Python files + README + requirements + config
-- **Lines of Code**: 1,086 lines
-- **Models**: WhyXrayCLIP, CXR-CLIP (BioViL), OpenCLIP
-- **Techniques**: Prompt ensemble, multi-template prompts
+- **Lines of Code**: 1,242 lines
+- **Model**: WhyXrayCLIP (CXR-specialized CLIP)
+- **Techniques**: Prompt ensemble (13 prompts/class), multi-template prompts
 
-**Total**: 4,416 lines of well-documented code
+**Total**: 4,281 lines of well-documented code
 
 ## Key Innovations
 
@@ -119,10 +116,10 @@ python zero_shot_ood_detection.py \
 4. **Ensemble + TTA**: Combines multiple models with test-time augmentation
 
 ### Task 2
-1. **Enhanced Prompt Engineering**: 13 diverse prompts per class covering clinical, radiological, anatomical, and medical terminology
-2. **WhyXrayCLIP**: CXR-specialized CLIP model for best performance
+1. **WhyXrayCLIP**: CXR-specialized CLIP model from UPenn for best performance
+2. **Enhanced Prompt Engineering**: 13 diverse prompts per class covering clinical, radiological, anatomical, and medical terminology
 3. **Zero-Shot Learning**: No training data required for new classes
-4. **Medical Domain Knowledge**: Prompts designed by medical imaging experts
+4. **Clean & Simple**: Single model focus, easy to use and maintain
 
 ## Performance Tips
 
@@ -133,10 +130,10 @@ python zero_shot_ood_detection.py \
 - Use `normal_gating` post-processing
 
 ### Task 2
-- WhyXrayCLIP gives best results for chest X-rays
+- WhyXrayCLIP is optimized for chest X-rays
 - Batch size 32-64 for optimal throughput
-- Temperature scaling = 5.0 works well
-- Prompt ensemble (mean) is robust
+- 13 prompts per class provide robust predictions
+- Simple API with minimal configuration
 
 ## Hardware Requirements
 
@@ -149,6 +146,7 @@ python zero_shot_ood_detection.py \
 ### Task 2 Inference
 - **GPU**: 1x GPU with 8GB+ VRAM (e.g., RTX 3070, V100)
 - **RAM**: 16GB+ system memory
+- **Model**: WhyXrayCLIP (ViT-L-14)
 - **Inference Time**: ~5-10 minutes for 1000 images
 
 ## Dependencies
@@ -166,8 +164,7 @@ python zero_shot_ood_detection.py \
 - scikit-learn (metrics)
 
 ### Task 2 Specific
-- open-clip-torch (WhyXrayCLIP, OpenCLIP)
-- hi-ml-multimodal (optional, for CXR-CLIP)
+- open-clip-torch (for WhyXrayCLIP)
 
 
 
@@ -178,8 +175,9 @@ This project is for research purposes only.
 ## Acknowledgments
 
 - **Task 1**: Inspired by LDAM, DRW, CSRA, and DB Loss papers
-- **Task 2**: Built on WhyXrayCLIP, CXR-CLIP (BioViL), and OpenCLIP
+- **Task 2**: Built on WhyXrayCLIP from University of Pennsylvania
 - Thanks to the medical imaging community for domain knowledge
+- Special thanks to the WhyXrayCLIP team for the CXR-specialized model
 
 ## Contact
 
