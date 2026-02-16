@@ -1,4 +1,4 @@
-# CXR Long-Tailed Recognition Challenge 2026
+# Winner Solution at CXR-LT 2026 (ISBI)
 
 This repository contains solutions for the CXR Long-Tailed Recognition Challenge 2026, addressing two critical problems in medical image analysis:
 
