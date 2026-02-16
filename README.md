@@ -1,6 +1,9 @@
 # CXR Long-Tailed Recognition Challenge 2026
 
+🔗 Challenge website: https://cxr-lt.github.io/CXR-LT-2026/
 This repository contains solutions for the CXR Long-Tailed Recognition Challenge 2026, addressing two critical problems in medical image analysis:
+
+
 
 1. **Task 1**: Long-tailed multi-label classification (30 classes)
 2. **Task 2**: Zero-shot out-of-distribution detection (6 OOD classes)
