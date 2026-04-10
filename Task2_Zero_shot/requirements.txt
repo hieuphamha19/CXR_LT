@@ -1,0 +1,14 @@
+# Core dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Image processing
+opencv-python>=4.8.0
+
+# Vision-Language Model - WhyXrayCLIP
+open-clip-torch>=2.20.0
+
+# Progress bars
+tqdm>=4.65.0
