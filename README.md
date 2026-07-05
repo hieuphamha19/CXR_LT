@@ -1,6 +1,6 @@
 # CXR Long-Tailed Recognition Challenge 2026
 
-🔗 Challenge website: https://cxr-lt.github.io/CXR-LT-2026/
+🔗 Challenge website: https://rad-lt.github.io/CXR-LT-2026/
 
 This repository contains the **Top-1** solutions for the CXR Long-Tailed Recognition Challenge 2026:
 
