@@ -5,6 +5,10 @@ Implementation for **Task 1** of the [CXR-LT 2026 Challenge](https://cxr-lt.gith
 > 🏆 **Top-1** submission using ConvNeXtV2-Base + CSRA + DB-CAS strategy.
 > Pre-trained weights: [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2)
 
+> **Important:** for single-model inference, **CSRA + DB-CAS gives the higher
+> score and remains the recommended model**. The standard MLP head below is
+> released as a reproducible baseline and an additional ensemble candidate.
+
 ---
 
 ## File Structure
@@ -14,6 +18,7 @@ Task1_Long_tailed/
 ├── README.md              # This file
 ├── requirements.txt       # Dependencies
 ├── model.py               # Model definition + timm registration (HF-compatible)
+├── train_standard_head.py # Training: ConvNeXtV2 + standard MLP head
 ├── train_csra_head.py     # Training: ConvNeXtV2 + CSRA + DB-CAS
 ├── inference.py           # Inference with TTA
 ├── losses.py              # Loss functions (AsymmetricLoss, DB Loss, LDAM, ...)
@@ -93,6 +98,21 @@ torchrun --nproc_per_node=4 train_csra_head.py
 - Two-phase training: head warm-up → full fine-tune with differential LR
 - EMA (Exponential Moving Average) for stable training
 - Mixed precision (AMP) + gradient clipping
+
+### Training the standard MLP head on PadChest
+
+```bash
+# Single GPU
+python train_standard_head.py
+
+# Multi-GPU training with DDP
+torchrun --nproc_per_node=4 train_standard_head.py
+```
+
+The standard head uses `BatchNorm → Dropout → Linear(1024→512) → ReLU →
+BatchNorm → Dropout → Linear(512→30)`. Its PadChest checkpoint is available in
+the same Hugging Face repository as `convnextv2_base_padchest_standard_mlp.pth`.
+Use the CSRA + DB-CAS weight above when selecting a single model for the best score.
 
 ### Inference
 

@@ -19,6 +19,7 @@ This repository contains the **Top-1** solutions for the CXR Long-Tailed Recogni
 │   ├── README.md                # Detailed documentation
 │   ├── requirements.txt         # Dependencies
 │   ├── model.py                 # Model definition (timm + HuggingFace compatible)
+│   ├── train_standard_head.py   # Training: ConvNeXtV2 + standard MLP head
 │   ├── train_csra_head.py       # Training: ConvNeXtV2 + CSRA + DB-CAS
 │   ├── inference.py             # Inference with TTA
 │   ├── losses.py                # Loss functions for long-tail
@@ -62,6 +63,9 @@ print('Model loaded:', sum(p.numel() for p in model.parameters()), 'params')
 # Train from scratch (Stage 2 DB-CAS fine-tune)
 torchrun --nproc_per_node=4 train_csra_head.py
 
+# Alternative: train the standard MLP head on PadChest
+torchrun --nproc_per_node=4 train_standard_head.py
+
 # Inference with TTA
 python inference.py \
   --checkpoints /path/to/best_padchest_db_cas.pth \
@@ -78,6 +82,10 @@ python inference.py \
 - DB-CAS: Distribution-Balanced Loss + Class-Aware Sampling
 - Two-stage training: MIMIC-CXR (14 cls, FC head) → PadChest (30 cls, CSRA head)
 - Test-Time Augmentation (TTA) + Normal Gating post-processing
+
+> **Single-model recommendation:** use the CSRA + DB-CAS checkpoint for the
+> strongest score. The standard MLP training code and checkpoint are provided
+> as a reproducible baseline, but CSRA performs better when only one model is used.
 
 ### Task 2: Zero-Shot OOD Detection
 
