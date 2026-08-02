@@ -111,7 +111,8 @@ python zero_shot_ood_detection.py \
 
 | Task | Model | HuggingFace |
 |---|---|---|
-| Task 1 | ConvNeXtV2-Base + CSRA (DB-CAS) | [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2) |
+| Task 1 | ConvNeXtV2-Base + CSRA (DB-CAS) — recommended for single-model inference | [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2/blob/main/convnextv2_base_mimic-cxr_padchest_csra_dbcas.safetensors) |
+| Task 1 | ConvNeXtV2-Base + standard MLP — baseline / ensemble candidate | [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2/blob/main/convnextv2_base_padchest_standard_mlp.safetensors) |
 
 ---
 
