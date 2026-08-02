@@ -1,6 +1,6 @@
 # Task 1: Long-Tailed Chest X-Ray Classification
 
-Implementation for **Task 1** of the [CXR-LT 2026 Challenge](https://cxr-lt.github.io/CXR-LT-2026/) — long-tailed multi-label classification of 30 chest X-ray findings.
+Implementation for **Task 1** of the [CXR-LT 2026 Challenge](https://rad-lt.github.io/CXR-LT-2026/) — long-tailed multi-label classification of 30 chest X-ray findings.
 
 > 🏆 **Top-1** submission using ConvNeXtV2-Base + CSRA + DB-CAS strategy.
 > Pre-trained weights: [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2)
