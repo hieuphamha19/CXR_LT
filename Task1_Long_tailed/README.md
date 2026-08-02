@@ -2,12 +2,15 @@
 
 Implementation for **Task 1** of the [CXR-LT 2026 Challenge](https://rad-lt.github.io/CXR-LT-2026/) — long-tailed multi-label classification of 30 chest X-ray findings.
 
-> 🏆 **Top-1** submission using ConvNeXtV2-Base + CSRA + DB-CAS strategy.
+> 🏆 **Top-1** submission using ConvNeXtV2-Base + CSRA-style + DB-CAS strategy.
 > Pre-trained weights: [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2)
 
-> **Important:** for single-model inference, **CSRA + DB-CAS gives the higher
+> **Important:** for single-model inference, **CSRA-style + DB-CAS gives the higher
 > score and remains the recommended model**. The standard MLP head below is
 > released as a reproducible baseline and an additional ensemble candidate.
+
+> **Terminology:** this repository uses a CSRA-style class-specific residual
+> attention head inspired by, but not identical to, the original CSRA formulation.
 
 ---
 
@@ -19,7 +22,7 @@ Task1_Long_tailed/
 ├── requirements.txt       # Dependencies
 ├── model.py               # Model definition + timm registration (HF-compatible)
 ├── train_standard_head.py # Training: ConvNeXtV2 + standard MLP head
-├── train_csra_head.py     # Training: ConvNeXtV2 + CSRA + DB-CAS
+├── train_csra_head.py     # Training: ConvNeXtV2 + CSRA-style + DB-CAS
 ├── inference.py           # Inference with TTA
 ├── losses.py              # Loss functions (AsymmetricLoss, DB Loss, LDAM, ...)
 ├── tta.py                 # Test-time augmentation
@@ -37,8 +40,8 @@ Stage 1 — Pre-train on MIMIC-CXR (14 classes)  [FC/MLP head]
   └── Phase 2: full fine-tune    (backbone LR 1e-5 / head LR 1e-4)
       Loss: AsymmetricLoss + LogitAdjustment, EMA decay 0.9999
 
-Stage 2 — DB-CAS fine-tune on PadChest (30 classes)  [FC → CSRA head]
-  Backbone from Stage 1; FC head replaced with CSRA; new head initialized
+Stage 2 — DB-CAS fine-tune on PadChest (30 classes)  [FC → CSRA-style head]
+  Backbone from Stage 1; FC head replaced with a CSRA-style head; new head initialized
   ├── Double-Balance (DB) sampling
   └── Class Activation Spatial (CAS) attention training
       Loss: AsymmetricLoss, EMA decay 0.9999
@@ -48,7 +51,7 @@ Stage 2 — DB-CAS fine-tune on PadChest (30 classes)  [FC → CSRA head]
 ```
 ConvNeXtV2-Base  (global_pool="", drop_path_rate=0.2)  → (B, 1024, H, W)
   └── BatchNorm2d(1024)
-  └── CSRA head  (λ=0.1)
+  └── CSRA-style head  (λ=0.1)
        ├── GAP branch : Linear(1024→30)               → logit_gap
        └── Attention  : Conv2d(1024→30, 1×1) → Softmax → logit_csra
        └── output     : logit_gap + 0.1 × logit_csra
@@ -93,7 +96,7 @@ torchrun --nproc_per_node=4 train_csra_head.py
 ```
 
 **Key training features:**
-- CSRA (Class-Specific Residual Attention) head with spatial attention
+- CSRA-style (Class-Specific Residual Attention) head with spatial attention
 - Distribution-Balanced (DB) Loss + Class-Aware Sampling (CAS)
 - Two-phase training: head warm-up → full fine-tune with differential LR
 - EMA (Exponential Moving Average) for stable training
@@ -112,7 +115,7 @@ torchrun --nproc_per_node=4 train_standard_head.py
 The standard head uses `BatchNorm → Dropout → Linear(1024→512) → ReLU →
 BatchNorm → Dropout → Linear(512→30)`. Its PadChest checkpoint is available in
 the same Hugging Face repository as `convnextv2_base_padchest_standard_mlp.pth`.
-Use the CSRA + DB-CAS weight above when selecting a single model for the best score.
+Use the CSRA-style + DB-CAS weight above when selecting a single model for the best score.
 
 ### Inference
 

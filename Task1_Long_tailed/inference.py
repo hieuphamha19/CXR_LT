@@ -5,7 +5,7 @@
 Ensemble Inference for Task 1
 - Combines predictions from multiple ConvNeXtV2 models:
   1. Standard head (from train_convnext_padchest.py)
-  2. CSRA head (from train_convnext_padchest_v3.py)
+  2. CSRA-style head (from train_convnext_padchest_v3.py)
 - Supports TTA and post-processing
 """
 
@@ -109,7 +109,7 @@ class ConvNeXtV2Classifier(nn.Module):
         return logits
 
 
-# Model 2: CSRA Head
+# Model 2: CSRA-style Head
 class CSRA(nn.Module):
     def __init__(self, input_dim, num_classes, lam=0.1):
         super().__init__()
@@ -166,7 +166,7 @@ def load_checkpoint_safely(path: str) -> Dict[str, Any]:
 
 
 def detect_model_type(state_dict: Dict[str, Any]) -> str:
-    """Detect if model uses standard head or CSRA head"""
+    """Detect if model uses standard head or CSRA-style head."""
     if any("head.classifier" in k for k in state_dict.keys()):
         return "csra"
     elif any("classifier.6" in k for k in state_dict.keys()):
@@ -607,4 +607,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

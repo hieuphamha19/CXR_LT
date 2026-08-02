@@ -1,10 +1,10 @@
 """
-CXR-LT 2026 Task 1 — ConvNeXtV2 + CSRA DB-CAS (timm-compatible).
+CXR-LT 2026 Task 1 — ConvNeXtV2 + CSRA-style DB-CAS (timm-compatible).
 
 Architecture:
   ConvNeXtV2-Base (spatial features, global_pool="")
     → BatchNorm2D
-    → CSRA head (Class-Specific Residual Attention, λ=0.1)
+    → CSRA-style head (Class-Specific Residual Attention, λ=0.1)
 
 Usage:
     from huggingface_hub import hf_hub_download
@@ -59,7 +59,7 @@ class CSRA(nn.Module):
 
 
 class ConvNeXtV2CXR(nn.Module):
-    """ConvNeXtV2-Base + BatchNorm2D + CSRA head (87.8M params)."""
+    """ConvNeXtV2-Base + BatchNorm2D + CSRA-style head (87.8M params)."""
     def __init__(self, num_classes: int = NUM_CLASSES, pretrained_cfg=None, pretrained_cfg_overlay=None):
         super().__init__()
         self.backbone = timm.create_model(
@@ -86,14 +86,14 @@ class ConvNeXtV2CXR(nn.Module):
 @register_model
 def cxrlt2026_task1_csra_dbcas(pretrained=False, **kwargs):
     """
-    ConvNeXtV2-Base + CSRA head. Top-1 CXR-LT 2026 Task 1.
+    ConvNeXtV2-Base + CSRA-style head. Top-1 CXR-LT 2026 Task 1.
 
     Training pipeline:
       Stage 1 — MIMIC-CXR (14 classes), FC/MLP head:
         ConvNeXtV2-Base (ImageNet-22k) → head warm-up → full fine-tune
         Loss: AsymmetricLoss + LogitAdjustment
-      Stage 2 — PadChest (30 classes), FC head replaced with CSRA + DB-CAS:
-        Backbone resumed from Stage 1; new CSRA head initialized
+      Stage 2 — PadChest (30 classes), FC head replaced with CSRA-style + DB-CAS:
+        Backbone resumed from Stage 1; new CSRA-style head initialized
         Double-Balance sampling + Class Activation Spatial strategy
         Loss: AsymmetricLoss, EMA decay 0.9999
     """

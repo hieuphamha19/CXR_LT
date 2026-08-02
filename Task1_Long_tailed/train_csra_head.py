@@ -478,7 +478,7 @@ def load_and_split_data():
 
 
 # =============================================================================
-# MODEL: ConvNeXtV2 + CSRA
+# MODEL: ConvNeXtV2 + CSRA-style head
 # =============================================================================
 class CSRA(nn.Module):
     def __init__(self, input_dim, num_classes, lam=0.1):
@@ -555,12 +555,12 @@ def load_checkpoint_for_resume(model, checkpoint_path):
     if RANK == 0:
         logger.info(f"Resuming from: {checkpoint_path} | epoch={ckpt.get('epoch', 'N/A')}")
 
-    # Migration old arch -> new CSRA
+    # Migration old arch -> new CSRA-style head
     new_sd = {}
     is_migration = False
     if "classifier.0.weight" in sd and "head.classifier.weight" not in sd:
         if RANK == 0:
-            logger.warning("Detected OLD ARCH -> migrating to CSRA")
+            logger.warning("Detected OLD ARCH -> migrating to CSRA-style head")
         is_migration = True
         for k, v in sd.items():
             if "backbone" in k:

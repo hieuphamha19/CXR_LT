@@ -20,7 +20,7 @@ This repository contains the **Top-1** solutions for the CXR Long-Tailed Recogni
 │   ├── requirements.txt         # Dependencies
 │   ├── model.py                 # Model definition (timm + HuggingFace compatible)
 │   ├── train_standard_head.py   # Training: ConvNeXtV2 + standard MLP head
-│   ├── train_csra_head.py       # Training: ConvNeXtV2 + CSRA + DB-CAS
+│   ├── train_csra_head.py       # Training: ConvNeXtV2 + CSRA-style + DB-CAS
 │   ├── inference.py             # Inference with TTA
 │   ├── losses.py                # Loss functions for long-tail
 │   ├── tta.py                   # Test-time augmentation
@@ -78,14 +78,14 @@ python inference.py \
 ```
 
 **Key Features:**
-- ConvNeXtV2-Base + CSRA (Class-Specific Residual Attention) head
+- ConvNeXtV2-Base + CSRA-style (Class-Specific Residual Attention) head
 - DB-CAS: Distribution-Balanced Loss + Class-Aware Sampling
-- Two-stage training: MIMIC-CXR (14 cls, FC head) → PadChest (30 cls, CSRA head)
+- Two-stage training: MIMIC-CXR (14 cls, FC head) → PadChest (30 cls, CSRA-style head)
 - Test-Time Augmentation (TTA) + Normal Gating post-processing
 
-> **Single-model recommendation:** use the CSRA + DB-CAS checkpoint for the
+> **Single-model recommendation:** use the CSRA-style + DB-CAS checkpoint for the
 > strongest score. The standard MLP training code and checkpoint are provided
-> as a reproducible baseline, but CSRA performs better when only one model is used.
+> as a reproducible baseline, but CSRA-style performs better when only one model is used.
 
 ### Task 2: Zero-Shot OOD Detection
 
@@ -111,7 +111,7 @@ python zero_shot_ood_detection.py \
 
 | Task | Model | HuggingFace |
 |---|---|---|
-| Task 1 | ConvNeXtV2-Base + CSRA (DB-CAS) — recommended for single-model inference | [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2/blob/main/convnextv2_base_mimic-cxr_padchest_csra_dbcas.safetensors) |
+| Task 1 | ConvNeXtV2-Base + CSRA-style (DB-CAS) — recommended for single-model inference | [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2/blob/main/convnextv2_base_mimic-cxr_padchest_csra_dbcas.safetensors) |
 | Task 1 | ConvNeXtV2-Base + standard MLP — baseline / ensemble candidate | [hieuphamha/cxrlt2026-task1-convnextv2](https://huggingface.co/hieuphamha/cxrlt2026-task1-convnextv2/blob/main/convnextv2_base_padchest_standard_mlp.safetensors) |
 
 ---
@@ -120,8 +120,8 @@ python zero_shot_ood_detection.py \
 
 ### Task 1
 1. **DB-CAS**: Distribution-Balanced Loss + Class-Aware Sampling — best combination for extreme long-tail
-2. **CSRA Head**: Spatial class-specific attention for better localization of rare findings
-3. **Two-Stage Training**: MIMIC-CXR pre-train (FC head) → PadChest fine-tune (CSRA head)
+2. **CSRA-style Head**: Spatial class-specific attention for better localization of rare findings
+3. **Two-Stage Training**: MIMIC-CXR pre-train (FC head) → PadChest fine-tune (CSRA-style head)
 4. **TTA + Normal Gating**: Robust inference with post-processing
 
 ### Task 2
