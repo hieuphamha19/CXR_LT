@@ -87,18 +87,18 @@ python zero_shot_ood_detection.py
 --image_dir             Path to image directory (default: from config)
 --batch_size            Batch size for inference (default: from config)
 --output                Output CSV file path (default: submission_task2_whyxrayclip.csv)
---prompt_set            Prompt ensemble: enhanced (default) or simple
+--prompt_set            Prompt ensemble: simple (default) or enhanced
 ```
 
-### Optional Simple Prompts
+### Default Simple Prompts
 
 Use the compact five-prompt ensemble for each OOD class:
 
 ```bash
-python zero_shot_ood_detection.py --prompt_set simple
+python zero_shot_ood_detection.py
 ```
 
-Omitting `--prompt_set` keeps the enhanced prompt ensemble used by default.
+Omitting `--prompt_set` uses the simple prompt ensemble. Use `--prompt_set enhanced` to select the 12-prompt ensemble.
 
 ## Why WhyXrayCLIP?
 
@@ -138,7 +138,7 @@ Professional medical language:
 - "spinal deformity presenting as lateral curvature with vertebral rotation"
 
 ### Prompt Ensemble
-The default `enhanced` set uses **12 diverse prompts** per class. The optional `simple` set uses **5 concise prompts** per class. Prompts are averaged for robust predictions.
+The default `simple` set uses **5 concise prompts** per class. The optional `enhanced` set uses **12 diverse prompts** per class. Prompts are averaged for robust predictions.
 
 ## How It Works
 

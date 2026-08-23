@@ -166,7 +166,7 @@ class CXRDataset(Dataset):
 class CLIPZeroShotOOD:
     """Zero-shot OOD detection using WhyXrayCLIP (CXR-specialized CLIP)."""
     
-    def __init__(self, device='cuda', prompt_set='enhanced'):
+    def __init__(self, device='cuda', prompt_set='simple'):
         """
         Initialize WhyXrayCLIP model for zero-shot classification.
         
@@ -535,8 +535,8 @@ def main():
                         help='Path to test CSV file (default: from config)')
     parser.add_argument('--image_dir', type=str, default=None,
                         help='Path to image directory (default: from config)')
-    parser.add_argument('--prompt_set', choices=['enhanced', 'simple'], default='enhanced',
-                        help='Prompt ensemble to use (default: enhanced)')
+    parser.add_argument('--prompt_set', choices=['enhanced', 'simple'], default='simple',
+                        help='Prompt ensemble to use (default: simple)')
     
     args = parser.parse_args()
     
