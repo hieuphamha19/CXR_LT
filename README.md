@@ -103,7 +103,7 @@ python zero_shot_ood_detection.py \
 **Key Features:**
 - Zero-shot learning (no training required)
 - WhyXrayCLIP (CXR-specialized CLIP from UPenn)
-- Enhanced prompt engineering (13 prompts per class)
+- Enhanced prompt engineering (12 prompts per class) with an optional 5-prompt set
 
 ---
 
@@ -126,7 +126,7 @@ python zero_shot_ood_detection.py \
 
 ### Task 2
 1. **WhyXrayCLIP**: CXR-specialized CLIP from University of Pennsylvania
-2. **Enhanced Prompt Engineering**: 13 diverse prompts per class (clinical, radiological, anatomical)
+2. **Enhanced Prompt Engineering**: 12 enhanced prompts per class, plus an optional 5-prompt concise set
 3. **Zero-Shot**: No training data required for new OOD classes
 
 ---

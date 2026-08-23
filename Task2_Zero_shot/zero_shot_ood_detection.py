@@ -166,7 +166,7 @@ class CXRDataset(Dataset):
 class CLIPZeroShotOOD:
     """Zero-shot OOD detection using WhyXrayCLIP (CXR-specialized CLIP)."""
     
-    def __init__(self, device='cuda'):
+    def __init__(self, device='cuda', prompt_set='enhanced'):
         """
         Initialize WhyXrayCLIP model for zero-shot classification.
         
@@ -174,6 +174,7 @@ class CLIPZeroShotOOD:
             device: Device to run on
         """
         self.device = device
+        self.prompt_set = prompt_set
         
         # Load WhyXrayCLIP from Hugging Face Hub
         model_name = "hf-hub:yyupenn/whyxrayclip"
@@ -202,6 +203,52 @@ class CLIPZeroShotOOD:
         Uses multiple prompt strategies: clinical, radiological, anatomical, and descriptive.
         Based on best-performing prompts from task2_best_v3.py
         """
+        if self.prompt_set == 'simple':
+            return {
+                "Scoliosis": [
+                    "a chest x-ray showing scoliosis",
+                    "abnormal lateral curvature of the spine in chest radiograph",
+                    "spinal deformity with scoliosis visible on chest x-ray",
+                    "curved spine indicating scoliosis",
+                    "thoracic scoliosis in chest radiograph"
+                ],
+                "Osteopenia": [
+                    "a chest x-ray showing osteopenia",
+                    "decreased bone density in chest radiograph",
+                    "reduced bone mineral density visible on chest x-ray",
+                    "osteopenic bones in thoracic spine",
+                    "low bone density in ribs and spine"
+                ],
+                "Bulla": [
+                    "a chest x-ray showing pulmonary bulla",
+                    "large air-filled space in the lung",
+                    "emphysematous bulla in chest radiograph",
+                    "bullous lung disease on chest x-ray",
+                    "air-filled cyst in lung parenchyma"
+                ],
+                "Infarction": [
+                    "a chest x-ray showing pulmonary infarction",
+                    "lung tissue infarction in chest radiograph",
+                    "wedge-shaped opacity indicating pulmonary infarct",
+                    "areas of infarcted lung tissue",
+                    "pulmonary infarct on chest x-ray"
+                ],
+                "Adenopathy": [
+                    "a chest x-ray showing adenopathy",
+                    "enlarged lymph nodes in chest radiograph",
+                    "mediastinal lymphadenopathy on chest x-ray",
+                    "hilar adenopathy visible in chest radiograph",
+                    "enlarged thoracic lymph nodes"
+                ],
+                "goiter": [
+                    "a chest x-ray showing goiter",
+                    "enlarged thyroid gland visible on chest radiograph",
+                    "thyroid goiter causing tracheal deviation",
+                    "superior mediastinal mass from goiter",
+                    "retrosternal goiter on chest x-ray"
+                ]
+            }
+
         prompts = {
             "Scoliosis": [
                 # Clinical/Descriptive prompts
@@ -488,6 +535,8 @@ def main():
                         help='Path to test CSV file (default: from config)')
     parser.add_argument('--image_dir', type=str, default=None,
                         help='Path to image directory (default: from config)')
+    parser.add_argument('--prompt_set', choices=['enhanced', 'simple'], default='enhanced',
+                        help='Prompt ensemble to use (default: enhanced)')
     
     args = parser.parse_args()
     
@@ -502,6 +551,7 @@ def main():
     print(f"Batch Size: {batch_size}")
     print(f"Test CSV: {test_csv}")
     print(f"Image Dir: {image_dir}")
+    print(f"Prompt Set: {args.prompt_set}")
     
     # Load test data
     print("\n" + "="*60)
@@ -542,7 +592,7 @@ def main():
     print("LOADING WHYXRAYCLIP MODEL")
     print("="*60)
     
-    clip_model = CLIPZeroShotOOD(device=DEVICE)
+    clip_model = CLIPZeroShotOOD(device=DEVICE, prompt_set=args.prompt_set)
     
     # Create OOD detector
     print("\n" + "="*60)

@@ -20,7 +20,7 @@ This project uses CLIP-based models to detect rare chest X-ray findings that wer
 - **Zero-Shot Detection**: No training required, uses pre-trained WhyXrayCLIP model
 - **WhyXrayCLIP**: CXR-specialized CLIP from UPenn - best performance on chest X-rays
 - **Enhanced Prompt Engineering**:
-  - Multi-template prompts (13 prompts per class)
+  - Multi-template prompts (12 enhanced or 5 simple prompts per class)
   - Clinical, radiological, anatomical, and medical terminology perspectives
   - Prompt ensemble for robust predictions
 - **Optimized for Medical Imaging**: Specialized preprocessing for chest X-rays
@@ -87,7 +87,18 @@ python zero_shot_ood_detection.py
 --image_dir             Path to image directory (default: from config)
 --batch_size            Batch size for inference (default: from config)
 --output                Output CSV file path (default: submission_task2_whyxrayclip.csv)
+--prompt_set            Prompt ensemble: enhanced (default) or simple
 ```
+
+### Optional Simple Prompts
+
+Use the compact five-prompt ensemble for each OOD class:
+
+```bash
+python zero_shot_ood_detection.py --prompt_set simple
+```
+
+Omitting `--prompt_set` keeps the enhanced prompt ensemble used by default.
 
 ## Why WhyXrayCLIP?
 
@@ -127,12 +138,12 @@ Professional medical language:
 - "spinal deformity presenting as lateral curvature with vertebral rotation"
 
 ### Prompt Ensemble
-Each class uses **13 diverse prompts** that are averaged together for robust predictions. This ensemble approach reduces sensitivity to individual prompt variations and improves overall accuracy.
+The default `enhanced` set uses **12 diverse prompts** per class. The optional `simple` set uses **5 concise prompts** per class. Prompts are averaged for robust predictions.
 
 ## How It Works
 
 ### 1. Text Encoding
-All 13 prompts for each of the 6 OOD classes are encoded into text embeddings using the CLIP text encoder. This happens once at initialization.
+All selected prompts for each of the 6 OOD classes are encoded into text embeddings using the CLIP text encoder. This happens once at initialization.
 
 ### 2. Image Encoding
 Each chest X-ray is:
@@ -141,7 +152,7 @@ Each chest X-ray is:
 
 ### 3. Similarity Computation
 For each class:
-- Compute cosine similarity between image embedding and all 13 text embeddings
+- Compute cosine similarity between image embedding and all selected text embeddings
 - Average similarities across prompts (ensemble)
 - Apply sigmoid with temperature scaling to convert to probabilities
 
@@ -166,7 +177,7 @@ Each value represents the probability [0, 1] that the corresponding finding is p
 1. **Batch Size**: Larger batch sizes (32-64) improve throughput
 2. **GPU Memory**: WhyXrayCLIP (ViT-L-14) requires ~8GB VRAM
 3. **Preprocessing**: Images are automatically normalized to [0, 1] and resized to 224×224
-4. **Prompt Ensemble**: Using 13 prompts per class provides robust predictions
+4. **Prompt Ensemble**: Choose 12 enhanced prompts or 5 simple prompts per class
 
 ## Technical Details
 
@@ -222,7 +233,7 @@ If you encounter OOM errors:
 
 1. **Check image quality**: Ensure images are readable chest X-rays
 2. **Verify preprocessing**: Images should be properly loaded
-3. **Review prompts**: The 13 prompts per class are optimized but can be customized
+3. **Review prompts**: Choose `enhanced` or `simple`, or customize the prompts
 4. **Check batch size**: Larger batches may improve stability
 
 
